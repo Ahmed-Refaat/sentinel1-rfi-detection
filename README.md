@@ -1,6 +1,6 @@
 # Sentinel-1 RFI Detection: Mapping GPS/GNSS Jamming from Space
 
-Detect and map radio frequency interference (RFI) in Sentinel-1 SAR imagery — a technique that can reveal GPS/GNSS jamming activity visible from orbit.
+Detect and map radio frequency interference (RFI) in Sentinel-1 SAR imagery, a technique that can reveal GPS/GNSS jamming activity visible from orbit.
 
 This pipeline searches the Copernicus Data Space Ecosystem (CDSE) for Sentinel-1 GRD products, downloads them, runs multi-method RFI detection, and produces georeferenced interactive maps showing interference zones overlaid on satellite imagery.
 
@@ -8,35 +8,35 @@ This pipeline searches the Copernicus Data Space Ecosystem (CDSE) for Sentinel-1
 
 ### Sentinel-1 and C-band SAR
 
-The Sentinel-1 constellation (S1A and S1C) carries a C-band synthetic aperture radar operating at **5.405 GHz**. Unlike optical satellites, SAR is an active sensor — it transmits microwave pulses and records the echoes. This makes it sensitive to any ground-based RF emitter operating near its frequency band.
+The Sentinel-1 constellation (S1A and S1C) carries a C-band synthetic aperture radar operating at 5.405 GHz. Unlike optical satellites, SAR is an active sensor, it transmits microwave pulses and records the echoes. This makes it sensitive to any ground-based RF emitter operating near its frequency band.
 
 When a SAR satellite passes over an active RF emitter on the ground, the emitter's signal is received by the radar antenna alongside the legitimate radar echoes. The SAR processor cannot distinguish these signals from real backscatter, so the interference appears as anomalous bright streaks, bands, or hotspots in the imagery that don't correspond to any physical features on the ground.
 
 ### The GPS/GNSS Connection
 
-GPS/GNSS jammers operate at L-band frequencies (1.164–1.610 GHz) — roughly **4 GHz below** Sentinel-1's C-band. Despite this frequency gap, there are several mechanisms by which GPS jamming infrastructure produces detectable interference in SAR imagery:
+GPS/GNSS jammers operate at L-band frequencies (1.164–1.610 GHz) roughly 4 GHz below Sentinel-1's C-band. Despite this frequency gap, there are several mechanisms by which GPS jamming infrastructure produces detectable interference in SAR imagery:
 
-**1. Harmonic radiation.** GPS jammers built around oscillators near 1.35 GHz produce harmonics at integer multiples. The 4th harmonic of 1.35 GHz falls at **5.4 GHz** — directly in Sentinel-1's receive band. Even with power falling off at each harmonic, military-grade jammers can produce enough 4th-harmonic energy to saturate a SAR receiver at moderate range.
+**1. Harmonic radiation.** GPS jammers built around oscillators near 1.35 GHz produce harmonics at integer multiples. The 4th harmonic of 1.35 GHz falls at 5.4 GHz, directly in Sentinel-1's receive band. Even with power falling off at each harmonic, military-grade jammers can produce enough 4th-harmonic energy to saturate a SAR receiver at moderate range.
 
 **2. Co-located electronic warfare infrastructure.** GPS jamming is rarely deployed in isolation. Military and state-level jamming installations typically include broader EW systems that may operate at or near C-band frequencies. The GPS jammer itself serves as a marker for a facility whose other emitters interfere with SAR.
 
-**3. Broadband noise leakage.** High-power jammers, particularly wideband noise generators, don't confine their output precisely to the target frequency band. Spectral sidelobes, intermodulation products, and out-of-band emissions can extend well above the intended jamming band, especially from poorly-filtered or deliberately broadband systems.
+**3. Broadband noise leakage.** High-power jammers, particularly wideband noise generators, don't confine their output precisely to the target frequency band. Spectral sidelobes, intermodulation products, and out-of-band emissions can extend well above the intended jamming band, especially from poorly filtered or deliberately broadband systems.
 
 ### Honest Caveats
 
-The ~4 GHz frequency gap between GPS L-band and Sentinel-1 C-band means **not all GPS jammers will be visible in SAR**. Low-power personal privacy devices and well-filtered military systems may produce no detectable C-band interference. The correlation between SAR RFI hotspots and GPS jamming is strongest for:
+The ~4 GHz frequency gap between GPS L-band and Sentinel-1 C-band means not all GPS jammers will be visible in SAR. Low-power personal privacy devices and well-filtered military systems may produce no detectable C-band interference. The correlation between SAR RFI hotspots and GPS jamming is strongest for:
 
 - High-power fixed-site jammers (state-level military installations)
 - Wideband noise jammers with poor spectral containment
 - Dense jamming deployments where multiple systems create cumulative emissions
 
-Conversely, SAR can detect C-band RFI that has nothing to do with GPS — radar altimeters, C-band communications, and other emitters. Context (location, geopolitics, temporal patterns) is essential for attributing SAR RFI detections to GPS jamming specifically.
+Conversely, SAR can detect C-band RFI that has nothing to do with GPS, radar altimeters, C-band communications, and other emitters. Context (location, geopolitics, temporal patterns) is essential for attributing SAR RFI detections to GPS jamming specifically.
 
 ### Why VH Cross-Polarization Is More Sensitive
 
 Sentinel-1 GRD products include two polarization channels: VV (co-polarized) and VH (cross-polarized). Natural terrain backscatter is much stronger in VV than VH — typically 6–10 dB higher. Ground-based RF emitters, however, radiate with arbitrary polarization that is received roughly equally in both channels.
 
-This means the **signal-to-clutter ratio for RFI is much higher in VH**: the interference signal is comparable in both channels, but the natural background is much lower in VH. In practice, we consistently observe higher RFI detection scores in VH than VV for the same product, making VH the preferred channel for jamming detection.
+This means the signal-to-clutter ratio for RFI is much higher in VH: the interference signal is comparable in both channels, but the natural background is much lower in VH. In practice, we consistently observe higher RFI detection scores in VH than VV for the same product, making VH the preferred channel for jamming detection.
 
 ## Detection Methodology
 
@@ -48,7 +48,7 @@ For each azimuth line (row) in the SAR image, compute the mean backscatter in dB
 
 - Compute row-wise mean of the dB image
 - Estimate robust baseline using median and MAD (median absolute deviation)
-- Flag lines where the row mean exceeds **3-sigma** above the median
+- Flag lines where the row mean exceeds 3-sigma above the median
 - Report percentage of flagged lines
 
 ### 2. Bright Pixel Detection
@@ -57,7 +57,7 @@ Detect individual pixels that are anomalously bright relative to their local nei
 
 - Compute a local baseline using median filtering (applied on a downsampled grid for efficiency)
 - Subtract baseline to get residuals
-- Flag pixels exceeding **4-sigma** above the residual median (using MAD-based robust sigma)
+- Flag pixels exceeding 4-sigma above the residual median (using MAD-based robust sigma)
 - Report count and percentage of bright pixels
 
 ### 3. Spectral Peak Analysis
@@ -67,15 +67,15 @@ Analyze the frequency content along azimuth columns to find narrow-band interfer
 - Sample 64 evenly-spaced range columns
 - For each column, apply a Hann window and compute the FFT
 - Estimate the spectral noise floor via the median
-- Flag spectral bins exceeding the floor by **5-sigma**
+- Flag spectral bins exceeding the floor by 5-sigma
 - Report total anomalous spectral peaks across all sampled columns
 
 ### 4. Streak Detection
 
-Identify connected bright-pixel structures that form horizontal (range-direction) streaks — the classic visual signature of SAR RFI.
+Identify connected bright-pixel structures that form horizontal (range-direction) streaks, the classic visual signature of SAR RFI.
 
 - Label connected components in the bright-pixel mask (downsampled for performance)
-- Retain components wider than **50 pixels** with aspect ratio > 5:1 (width:height)
+- Retain components wider than 50 pixels with aspect ratio > 5:1 (width:height)
 - Report count of detected linear streaks
 
 ### Composite Score
